@@ -1,0 +1,8 @@
+[Unit]
+Description=Team OS backup: память агента, секреты, Telegram-сессия, конфиги хоста
+OnFailure=notify-failure@%n.service
+
+[Service]
+Type=oneshot
+Environment=TZ=@TZ@
+ExecStart=@SBIN_DIR@/teamos-backup.sh

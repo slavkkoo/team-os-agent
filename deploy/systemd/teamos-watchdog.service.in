@@ -1,0 +1,7 @@
+[Unit]
+Description=Team OS watchdog: бот, диск, бэкап, доп. проверки сети
+
+[Service]
+Type=oneshot
+Environment=TZ=@TZ@
+ExecStart=@SBIN_DIR@/teamos-watchdog.sh

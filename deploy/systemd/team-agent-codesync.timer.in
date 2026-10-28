@@ -1,0 +1,11 @@
+[Unit]
+Description=Team agent duty timer: codesync (пн 07:00, пояс @TZ@)
+
+[Timer]
+OnCalendar=Mon *-*-* 07:00:00 @TZ@
+# прогон, пропущенный из-за выключенного сервера, выполнится после загрузки
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

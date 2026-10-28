@@ -1,0 +1,21 @@
+{
+  "_comment": "Пример: два сервера-заглушки. Скопируйте в config/mcp.json (в .gitignore), подставьте свои серверы и токены, chmod 600. Токены — только read-only.",
+  "mcpServers": {
+    "tracker": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/tracker-mcp-server", "--read-only"],
+      "env": {
+        "TRACKER_URL": "https://tracker.example.com",
+        "TRACKER_API_TOKEN": "<read-only токен трекера>"
+      }
+    },
+    "docs": {
+      "type": "http",
+      "url": "https://mcp.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <read-only токен вики>"
+      }
+    }
+  }
+}

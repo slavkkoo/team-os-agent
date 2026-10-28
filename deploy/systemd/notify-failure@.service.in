@@ -1,0 +1,6 @@
+[Unit]
+Description=Team OS: алерт владельцу об упавшем %i
+
+[Service]
+Type=oneshot
+ExecStart=@SBIN_DIR@/teamos-unit-failed %i

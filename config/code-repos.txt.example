@@ -1,0 +1,16 @@
+# Read-only клоны кода, которые агент читает при ответах команде.
+# Скопируйте в config/code-repos.txt (он в .gitignore) и поправьте под себя.
+#
+# Формат строки:  имя  url  ветка  [ключевые,слова]
+#   имя            — каталог в code/ и имя для bin/code-git (без «/»)
+#   url            — HTTPS (токен GITLAB_TOKEN подставится через GIT_ASKPASS) или ssh
+#   ветка          — какую ветку держать (обычно та, что сейчас в проде)
+#   ключевые,слова — НЕОБЯЗАТЕЛЬНО. Если заданы, репо подключается к вопросу только
+#                    когда в нём есть одно из слов (без пробелов, через запятую,
+#                    нижний регистр). Без них — подключается к каждому вопросу команды.
+#
+# Синхронизация — team-agent-codesync.timer (bin/update_code.sh), раз в неделю.
+
+backend   https://gitlab.example.com/acme/backend.git    main
+frontend  https://gitlab.example.com/acme/web-app.git    main     интерфейс,экран,кнопк,форм,фронт,личный,кабинет
+mobile    git@gitlab.example.com:acme/mobile-app.git     release  мобильн,приложени,ios,android

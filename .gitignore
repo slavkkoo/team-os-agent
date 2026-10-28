@@ -1,0 +1,45 @@
+# --- секреты и токены (НИКОГДА в git) ---
+.env
+.env.*
+!.env.example
+*.env
+*.token
+*.key
+*.pem
+*.session
+*.session.*
+*.session-journal
+tg/
+
+# --- рантайм-состояние и данные (PII: переписка, дампы чатов, логи) ---
+memory/
+logs/
+uploads/
+*_run/
+backups/
+*.tar.gz
+
+# --- клоны, тянутся отдельно ---
+code/
+knowledge/
+
+# --- локальная конфигурация (специфична для сервера) ---
+config/code-repos.txt
+# конфиги коннекторов: chat_id клиентов, токены MCP-серверов — в git только *.example.json
+config/*.json
+!config/*.example.json
+
+# --- рантайм Claude Code: settings.json рендерит install.sh, остальное — транскрипты ---
+.claude-config/
+.claude-config-public/
+
+# --- python ---
+.venv/
+__pycache__/
+*.pyc
+
+# --- прочее ---
+*.bak
+*.bak.*
+*.tmp
+.DS_Store

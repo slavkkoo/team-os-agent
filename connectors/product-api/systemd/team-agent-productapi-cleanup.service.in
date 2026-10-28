@@ -1,0 +1,16 @@
+[Unit]
+Description=Team agent connector product-api: автоочистка своих тестовых объектов
+After=network-online.target
+Wants=network-online.target
+OnFailure=notify-failure@%n.service
+
+[Service]
+Type=oneshot
+User=@AGENT_USER@
+WorkingDirectory=@AGENT_HOME@
+Environment=AGENT_HOME=@AGENT_HOME@
+Environment=TZ=@TZ@
+Environment=PATH=@AGENT_USER_HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash @AGENT_HOME@/connectors/product-api/run_cleanup.sh
+TimeoutStartSec=600
+NoNewPrivileges=true

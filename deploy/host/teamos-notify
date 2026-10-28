@@ -1,0 +1,21 @@
+#!/bin/bash
+# teamos-notify "<текст>" — техническая тревога владельцу в личку через бота агента.
+# Единая точка для алертов хоста (watchdog, упавшие unit'ы, бэкап).
+# Шаблон: @AGENT_HOME@ подставляет install.sh при установке в @SBIN_DIR@.
+set -uo pipefail
+ENV_FILE="@AGENT_HOME@/.env"
+get() { grep -m1 "^$1=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'; }
+OWNER=$(get OWNER_ID)
+TOKEN=$(get TG_BOT_TOKEN)
+text="${1:-}"
+if [ -z "$OWNER" ] || [ -z "$TOKEN" ]; then
+  logger -t teamos-notify "нет OWNER_ID/TG_BOT_TOKEN в $ENV_FILE: ${text:0:120}"
+  exit 1
+fi
+while [ -n "$text" ]; do
+  chunk="${text:0:3900}"; text="${text:3900}"
+  # токен — через конфиг curl на stdin, а не аргументом (иначе виден в ps)
+  printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TOKEN" \
+    | curl -s -m 20 -K - --data-urlencode "chat_id=${OWNER}" --data-urlencode "text=${chunk}" \
+    | grep -q '"ok":true' || logger -t teamos-notify "send failed: ${chunk:0:120}"
+done

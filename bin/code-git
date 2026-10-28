@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""code-git — read-only git по клонам code/ (замена широкого `Bash(git -C:*)`).
+
+Usage: code-git <репо> <log|show|blame|grep|diff|ls-files|rev-parse|branch|tag|shortlog> [аргументы]
+  репо — имя каталога в code/ (см. config/code-repos.txt)
+  напр.: code-git backend log -5 --oneline -- src/booking
+         code-git backend show <sha>~1:src/booking/Slot.php
+         code-git backend log --all --oneline -i --grep=<номер задачи>
+
+Почему обёртка: `git -C <любой путь> <любая подкоманда>` позволяет `-c core.pager=…`,
+`--output=…`, `--ext-diff`, `grep -O` — то есть запуск программ и запись файлов
+из ответа в чате, куда может попасть prompt-injection.
+"""
+import os
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+AGENT_HOME = os.path.abspath(os.environ.get("AGENT_HOME") or os.path.join(HERE, ".."))
+CODE = os.path.realpath(os.path.join(AGENT_HOME, "code"))
+SUBS = {"log", "show", "blame", "grep", "diff", "ls-files", "rev-parse", "branch", "tag", "shortlog"}
+BAD = ("--output", "--ext-diff", "--textconv", "--open-files-in-pager", "--exec", "--upload-pack",
+       "--receive-pack", "--config-env", "--git-dir", "--work-tree", "--paginate")
+
+
+def main():
+    a = sys.argv[1:]
+    if len(a) < 2:
+        sys.exit(__doc__)
+    repo, sub, rest = a[0], a[1], a[2:]
+    path = os.path.realpath(os.path.join(CODE, repo))
+    if os.sep in repo or not path.startswith(CODE + os.sep) or not os.path.isdir(os.path.join(path, ".git")):
+        have = sorted(os.listdir(CODE)) if os.path.isdir(CODE) else []
+        sys.exit(f"нет репо «{repo}» в code/: " + (", ".join(have) or "—"))
+    if sub not in SUBS:
+        sys.exit(f"подкоманда «{sub}» не разрешена; можно: {', '.join(sorted(SUBS))}")
+    for x in rest:
+        if x.startswith(BAD) or (sub == "grep" and x.startswith("-O")):
+            sys.exit(f"аргумент «{x}» запрещён (может запустить программу или записать файл)")
+    env = {"PATH": "/usr/bin:/bin", "HOME": os.path.expanduser("~"), "GIT_PAGER": "cat", "PAGER": "cat",
+           "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0", "LANG": "C.UTF-8"}
+    cmd = ["git", "-c", "core.pager=cat", "-c", "diff.external=", "-c", "core.fsmonitor=false",
+           "-C", path, "--no-pager", sub, *rest]
+    r = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
+    out = (r.stdout or "") + (r.stderr or "")
+    print(out[:30000] + ("\n…(обрезано на 30000 симв.; сузь запрос)" if len(out) > 30000 else ""))
+    sys.exit(r.returncode)
+
+
+if __name__ == "__main__":
+    main()

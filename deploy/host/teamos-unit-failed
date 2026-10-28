@@ -1,0 +1,9 @@
+#!/bin/bash
+# Вызывается из notify-failure@<unit>.service (OnFailure=): unit упал — владельцу алерт
+# с хвостом журнала. Без этого упавшие duty замечают «сами или никак».
+set -uo pipefail
+U="${1:?unit}"
+tail=$(journalctl -u "$U" -n 12 --no-pager -o cat 2>/dev/null | tail -c 900)
+@SBIN_DIR@/teamos-notify "🛑 Упал $U ($(date '+%d.%m %H:%M %Z')). Хвост журнала:
+$tail
+Разбор: journalctl -u $U -n 100"

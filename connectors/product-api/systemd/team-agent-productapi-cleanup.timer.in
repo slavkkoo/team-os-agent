@@ -1,0 +1,10 @@
+[Unit]
+Description=Team agent connector timer: product-api cleanup (ежедневно 20:00, пояс @TZ@)
+
+[Timer]
+OnCalendar=*-*-* 20:00:00 @TZ@
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Team agent connector prod-digest: черновик месячного дайджеста «что на проде»
+After=network-online.target
+Wants=network-online.target
+OnFailure=notify-failure@%n.service
+
+[Service]
+Type=oneshot
+User=@AGENT_USER@
+WorkingDirectory=@AGENT_HOME@
+EnvironmentFile=@AGENT_USER_HOME@/.claude-token.env
+Environment=AGENT_HOME=@AGENT_HOME@
+Environment=TZ=@TZ@
+Environment=PATH=@AGENT_USER_HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash @AGENT_HOME@/connectors/prod-digest/run_prod_digest.sh
+TimeoutStartSec=1200
+NoNewPrivileges=true

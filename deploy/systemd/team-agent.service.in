@@ -1,0 +1,26 @@
+[Unit]
+Description=Team agent: Telegram bot (always-on Q&A)
+After=network-online.target
+Wants=network-online.target
+OnFailure=notify-failure@%n.service
+
+[Service]
+Type=simple
+User=@AGENT_USER@
+WorkingDirectory=@AGENT_HOME@
+# CLAUDE_CODE_OAUTH_TOKEN (claude setup-token); остальная конфигурация — @AGENT_HOME@/.env, её читает сам бот
+EnvironmentFile=@AGENT_USER_HOME@/.claude-token.env
+Environment=AGENT_HOME=@AGENT_HOME@
+Environment=TZ=@TZ@
+Environment=PATH=@AGENT_USER_HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/python3 @AGENT_HOME@/bin/team_agent_bot.py
+Restart=always
+RestartSec=5
+# мягкая остановка: SIGTERM только боту, начатые ответы claude дописываются
+# (бот ждёт их до QUERY_TIMEOUT_CODE_S + 40 с)
+KillMode=mixed
+TimeoutStopSec=700
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

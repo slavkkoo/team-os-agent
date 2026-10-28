@@ -1,0 +1,66 @@
+{
+  "_comment": "Скопируйте в config/client-reports.json (он в .gitignore: там chat_id клиентов). Пример — выдуманные клиенты SaaS онлайн-записи Acme. draft_only=true: отчёт приходит владельцу черновиком, клиенту — только после того, как вы поставите false.",
+  "defaults": {"draft_only": true},
+  "sources": {
+    "acme-metrics": {
+      "_comment": "GET JSON со сводкой за день: {\"data\": {\"bookings_created\": 44, ...}}. Токен — переменная из auth_env.",
+      "type": "http_json",
+      "url": "https://metrics.example.com/api/v1/clients/{client_id}/daily?date={date}",
+      "values_path": "data",
+      "auth_env": "CLIENT_REPORTS_TOKEN"
+    },
+    "acme-sql": {
+      "_comment": "POST {query, params} в отчётный эндпоинт продукта. Эндпоинт выполняет запрос read-only ролью БД с statement_timeout и подставляет params сам (никакой склейки строк).",
+      "type": "sql_http",
+      "url": "https://sandbox-api.example.com/internal/reports/query",
+      "query": "SELECT count(*) AS bookings_created, coalesce(sum(price), 0) AS revenue FROM bookings WHERE account_id = :client_id AND created_at::date = :date",
+      "rows_path": "rows",
+      "columns_path": "columns",
+      "auth_env": "CLIENT_REPORTS_TOKEN"
+    },
+    "export-csv": {
+      "_comment": "Локальный файл или URL выгрузки: строка на клиента и день.",
+      "type": "csv",
+      "path": "/var/lib/acme-exports/daily.csv",
+      "date_column": "date",
+      "client_column": "client_id"
+    }
+  },
+  "reports": [
+    {
+      "name": "clinic-north",
+      "label": "Клиника «Север» (пример)",
+      "chat_id": "<chat_id клиентского чата, вида -100…>",
+      "client_id": "c-001",
+      "source": "acme-metrics",
+      "metrics": [
+        {"key": "bookings_created", "title": "Создано записей", "compare": true},
+        {"key": "bookings_cancelled", "title": "Отменено", "compare": true},
+        {"key": "no_show", "title": "Неявки", "compare": true}
+      ],
+      "footer": "Вопросы по цифрам — в этот чат."
+    },
+    {
+      "name": "salon-river",
+      "label": "Салон «Река» (пример)",
+      "chat_id": "<chat_id>",
+      "client_id": "c-002",
+      "source": "acme-sql",
+      "metrics": [
+        {"key": "bookings_created", "title": "Создано записей"},
+        {"key": "revenue", "title": "Выручка"}
+      ]
+    },
+    {
+      "name": "studio-east",
+      "label": "Студия «Восток» (пример)",
+      "chat_id": "<chat_id>",
+      "client_id": "c-003",
+      "source": "export-csv",
+      "metrics": [
+        {"key": "bookings_created", "title": "Создано записей"},
+        {"key": "no_show", "title": "Неявки"}
+      ]
+    }
+  ]
+}

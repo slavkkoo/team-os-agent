@@ -1,0 +1,19 @@
+[Unit]
+Description=Team agent duty: обновление клонов кода (config/code-repos.txt)
+After=network-online.target
+Wants=network-online.target
+# упавшая duty обязана сообщить о себе: тишина ≠ успех
+OnFailure=notify-failure@%n.service
+
+[Service]
+Type=oneshot
+User=@AGENT_USER@
+WorkingDirectory=@AGENT_HOME@
+EnvironmentFile=@AGENT_USER_HOME@/.claude-token.env
+Environment=AGENT_HOME=@AGENT_HOME@
+Environment=TZ=@TZ@
+Environment=PATH=@AGENT_USER_HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash @AGENT_HOME@/bin/update_code.sh
+# бэкстоп поверх таймаутов внутри скрипта: зависшая duty не висит вечно
+TimeoutStartSec=1800
+NoNewPrivileges=true

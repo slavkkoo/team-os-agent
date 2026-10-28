@@ -1,0 +1,11 @@
+[Unit]
+Description=Team agent duty timer: stalefacts (пн 08:00, после codesync, пояс @TZ@)
+
+[Timer]
+OnCalendar=Mon *-*-* 08:00:00 @TZ@
+# прогон, пропущенный из-за выключенного сервера, выполнится после загрузки
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

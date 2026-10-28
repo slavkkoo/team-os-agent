@@ -1,0 +1,9 @@
+[Unit]
+Description=Team OS backup ежедневно 04:00 (пояс @TZ@)
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 @TZ@
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Team agent connector timer: ticket-learn (пн 03:00, пояс @TZ@ — ночью окно подписки свободно)
+
+[Timer]
+OnCalendar=Mon *-*-* 03:00:00 @TZ@
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

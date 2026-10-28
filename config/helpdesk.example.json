@@ -1,0 +1,52 @@
+{
+  "_comment": "Скопируйте в config/helpdesk.json. adapter — какой из adapters использовать. Плейсхолдеры в путях и параметрах: {since} {until} (YYYY-MM-DD), {since_ts} {until_ts} (unix), {page}, {id}. Пути полей — через точку (requester.id).",
+  "adapter": "zendesk",
+  "noise_subject_re": "^(Автоответ|Auto-?reply|Out of office|Re: Ваш запрос зарегистрирован)",
+  "adapters": {
+    "zendesk": {
+      "_comment": "Zendesk API v2. HELPDESK_URL=https://<поддомен>.zendesk.com, HELPDESK_AUTH=basic, HELPDESK_USER=<email агента>/token, HELPDESK_TOKEN=<API token>. Роль агента: Light agent или кастомная только на чтение тикетов.",
+      "list": {
+        "path": "/api/v2/search.json",
+        "params": {
+          "query": "type:ticket status>=solved updated>={since} updated<{until}",
+          "sort_by": "updated_at",
+          "sort_order": "desc",
+          "per_page": "100",
+          "page": "{page}"
+        },
+        "items": "results",
+        "max_pages": 10
+      },
+      "ticket": {"id": "id", "subject": "subject", "created_at": "created_at", "requester_id": "requester_id"},
+      "messages": {
+        "path": "/api/v2/tickets/{id}/comments.json",
+        "items": "comments",
+        "body": "plain_body",
+        "author_id": "author_id",
+        "public": "public",
+        "created_at": "created_at"
+      }
+    },
+    "generic": {
+      "_comment": "Любой REST-хелпдеск: опишите, где список закрытых тикетов за окно и где сообщения тикета. Роль автора — через role/staff_values или (если role пуст) «автор ≠ requester_id».",
+      "list": {
+        "path": "/api/v1/tickets",
+        "params": {"status": "closed", "closed_from": "{since}", "closed_to": "{until}", "page": "{page}", "limit": "100"},
+        "items": "data",
+        "max_pages": 20
+      },
+      "ticket": {"id": "id", "subject": "subject", "created_at": "created_at", "requester_id": "requester.id", "skip_if_true": ["spam", "deleted"]},
+      "messages": {
+        "path": "/api/v1/tickets/{id}/messages",
+        "items": "data",
+        "body": "text",
+        "body_html": "html",
+        "author_id": "author.id",
+        "role": "author.type",
+        "staff_values": ["staff", "agent"],
+        "internal": "is_note",
+        "created_at": "created_at"
+      }
+    }
+  }
+}

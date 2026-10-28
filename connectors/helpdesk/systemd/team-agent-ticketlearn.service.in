@@ -1,0 +1,17 @@
+[Unit]
+Description=Team agent connector helpdesk: обучение на тикетах → ветка + PR
+After=network-online.target
+Wants=network-online.target
+OnFailure=notify-failure@%n.service
+
+[Service]
+Type=oneshot
+User=@AGENT_USER@
+WorkingDirectory=@AGENT_HOME@
+EnvironmentFile=@AGENT_USER_HOME@/.claude-token.env
+Environment=AGENT_HOME=@AGENT_HOME@
+Environment=TZ=@TZ@
+Environment=PATH=@AGENT_USER_HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash @AGENT_HOME@/connectors/helpdesk/run_ticketlearn.sh
+TimeoutStartSec=2100
+NoNewPrivileges=true

@@ -1,0 +1,29 @@
+{
+  "_comment": "Скопируйте в config/product-api.json и поправьте под свой API. Пример — выдуманный SaaS онлайн-записи Acme. Пути — БЕЗ базового URL (он в PRODUCT_API_URL).",
+  "get_allowlist": [
+    "/v1/services",
+    "/v1/staff",
+    "/v1/slots",
+    "/v1/bookings/",
+    "/v1/locations"
+  ],
+  "write": {
+    "/v1/bookings": {
+      "_comment": "Коллекция, в которой агенту можно создавать тестовые объекты. PUT/PATCH/DELETE — только по своим id из ledger.",
+      "methods": ["POST", "DELETE"],
+      "id_field": "id",
+      "marker_field": "comment",
+      "actions": ["cancel"],
+      "require_in": {
+        "client.phone": ["+15550000000"],
+        "client.email": ["agent-test@example.com"]
+      },
+      "max": {
+        "prepayment_amount": 0
+      },
+      "force": {
+        "notify_client": false
+      }
+    }
+  }
+}

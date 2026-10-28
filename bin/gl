@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""
+gl — read-only клиент GitLab для агента (проект из GITLAB_PROJECT).
+
+Usage:
+  gl issue <iid>            # задача: заголовок, статус, метки, милстоун, описание, комменты
+  gl search <строка>        # поиск задач: совпадения по заголовку первыми, до 100 шт
+  gl closed [дней]          # задачи, закрытые за N дней (по умолчанию 7) — вход brain-sync
+  gl label "<имя>" [state]  # задачи под меткой с описанием и комментами; state=opened по умолчанию
+  gl -P <проект> <команда>  # то же для другого проекта (id или путь group/project)
+
+Только чтение (GET). Токен — GITLAB_TOKEN из .env (scope read_api, лучше
+project/group access token с ролью Reporter). Если GitLab за VPN и сеть
+недоступна — скажем об этом, а не упадём молча.
+"""
+import datetime
+import json
+import os
+import sys
+import urllib.parse
+import urllib.request
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+AGENT_HOME = os.path.abspath(os.environ.get("AGENT_HOME") or os.path.join(HERE, ".."))
+BASE = ""
+
+
+def load_env():
+    path = os.path.join(AGENT_HOME, ".env")
+    if not os.path.exists(path):
+        return
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip("\"'"))
+
+
+def set_project(project):
+    global BASE
+    url = os.environ.get("GITLAB_URL", "").rstrip("/")
+    if not url or not project:
+        sys.exit("GitLab не настроен: нужны GITLAB_URL и GITLAB_PROJECT в .env")
+    BASE = f"{url}/api/v4/projects/{urllib.parse.quote(project, safe='')}"
+
+
+def api(path):
+    tok = os.environ.get("GITLAB_TOKEN")
+    if not tok:
+        sys.exit("Нет GITLAB_TOKEN в .env")
+    req = urllib.request.Request(BASE + path, headers={"PRIVATE-TOKEN": tok})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.load(r)
+    except Exception as e:
+        code = getattr(e, "code", None)
+        if code is not None:
+            sys.exit(f"GitLab ответил HTTP {code} на {path}. GitLab ДОСТУПЕН — это НЕ про сеть/VPN "
+                     "(задача может быть в другом проекте или нет прав). Передай ошибку как есть.")
+        sys.exit(f"GitLab недоступен ({type(e).__name__}: {e}). Похоже на сеть/VPN — так и скажи спрашивающему.")
+
+
+def show_issue(iid):
+    i = api(f"/issues/{iid}")
+    ms = (i.get("milestone") or {}).get("title") or "—"
+    print(f"#{i['iid']} [{i['state']}] {i['title']}")
+    print(f"labels: {', '.join(i['labels']) or '—'} | milestone: {ms} | обновлена: {i['updated_at'][:10]}")
+    if i.get("closed_at"):
+        print(f"закрыта: {i['closed_at'][:10]}")
+    print(f"url: {i['web_url']}")
+    print("\n--- описание ---")
+    print((i.get("description") or "(пусто)")[:3000])
+    notes = [n for n in api(f"/issues/{iid}/notes?sort=desc&per_page=20") if not n.get("system")][:5]
+    if notes:
+        print("\n--- последние комментарии ---")
+        for n in reversed(notes):
+            print(f"[{n['created_at'][:10]}] {n['author']['name']}: {n['body'][:400]}\n")
+
+
+def closed(days):
+    since = (datetime.datetime.now(datetime.timezone.utc)
+             - datetime.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    issues = api(f"/issues?state=closed&updated_after={since}&per_page=100&order_by=updated_at")
+    issues = [i for i in issues if (i.get("closed_at") or "") >= since]
+    if not issues:
+        print(f"Закрытых задач за {days} дн. нет.")
+        return
+    for i in issues:
+        print(f"#{i['iid']} {i['title'][:90]} (закрыта {i['closed_at'][:10]}, {', '.join(i['labels']) or '—'})")
+
+
+def label_dump(name, state="opened"):
+    # Регистр метки важен (фильтр GitLab чувствителен).
+    q = urllib.parse.urlencode({"labels": name, "state": state, "per_page": 100})
+    issues = sorted(api(f"/issues?{q}"), key=lambda x: x["iid"])
+    for i in issues:
+        ms = (i.get("milestone") or {}).get("title") or "—"
+        print("=" * 70)
+        print(f"#{i['iid']} | {i['title']}")
+        print(f"labels: {', '.join(i['labels'])} | milestone: {ms} | обновлена: {i['updated_at'][:10]} "
+              f"| комментов: {i.get('user_notes_count', 0)}")
+        print(f"url: {i['web_url']}")
+        desc = (i.get("description") or "").strip()
+        print("описание:", desc[:1400] if desc else "(пусто)")
+        notes = [n for n in api(f"/issues/{i['iid']}/notes?sort=asc&per_page=100") if not n.get("system")]
+        for n in notes[-6:]:
+            body = (n.get("body") or "").strip().replace("\n", " ")
+            print(f"  [{n['author']['name']}] {body[:280]}")
+    print("=" * 70)
+    print(f"ВСЕГО: {len(issues)}")
+
+
+def search(query):
+    # Два прохода: сперва совпадения в заголовке (эпики и старые задачи, выпадающие
+    # из свежей выдачи), потом по тексту.
+    q = urllib.parse.quote(query)
+    seen, out = set(), []
+    for extra in ("&in=title", ""):
+        for i in api(f"/issues?search={q}{extra}&per_page=50&order_by=updated_at"):
+            if i["iid"] in seen:
+                continue
+            seen.add(i["iid"])
+            out.append(i)
+    if not out:
+        print("Ничего не найдено.")
+        return
+    for i in out[:100]:
+        cl = f", закрыта {i['closed_at'][:10]}" if i.get("closed_at") else ""
+        print(f"#{i['iid']} [{i['state']}{cl}] {i['title'][:90]} (upd {i['updated_at'][:10]})")
+
+
+def main(argv):
+    load_env()
+    project = os.environ.get("GITLAB_PROJECT", "")
+    if len(argv) >= 2 and argv[0] == "-P":
+        project, argv = argv[1], argv[2:]
+    set_project(project)
+    if len(argv) >= 2 and argv[0] == "issue":
+        show_issue(int(argv[1]))
+    elif len(argv) >= 2 and argv[0] == "search":
+        search(" ".join(argv[1:]))
+    elif len(argv) >= 1 and argv[0] == "closed":
+        closed(int(argv[1]) if len(argv) >= 2 else 7)
+    elif len(argv) >= 2 and argv[0] == "label":
+        label_dump(argv[1], argv[2] if len(argv) >= 3 else "opened")
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

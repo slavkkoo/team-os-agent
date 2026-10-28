@@ -1,0 +1,10 @@
+[Unit]
+Description=Team agent connector timer: prod-digest (первый понедельник месяца 10:00, пояс @TZ@)
+
+[Timer]
+OnCalendar=Mon *-*-01..07 10:00:00 @TZ@
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

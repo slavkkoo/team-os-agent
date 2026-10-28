@@ -1,0 +1,9 @@
+[Unit]
+Description=Team OS watchdog каждые 10 минут
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target

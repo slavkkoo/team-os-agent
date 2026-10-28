@@ -1,0 +1,62 @@
+{
+  "env": {
+    "DISABLE_AUTOUPDATER": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Read(/@AGENT_HOME@/knowledge/**)",
+      "Grep(/@AGENT_HOME@/knowledge/**)",
+      "Glob(/@AGENT_HOME@/knowledge/**)",
+      "Read(/@AGENT_HOME@/code/**)",
+      "Grep(/@AGENT_HOME@/code/**)",
+      "Glob(/@AGENT_HOME@/code/**)",
+      "Read(/@AGENT_HOME@/uploads/**)",
+      "Bash(bin/gl:*)",
+      "Bash(./bin/gl:*)",
+      "Bash(@AGENT_HOME@/bin/gl:*)",
+      "Bash(bin/code-git:*)",
+      "Bash(./bin/code-git:*)",
+      "Bash(@AGENT_HOME@/bin/code-git:*)",
+      "Bash(connectors/logs-metrics/logs_metrics.py:*)",
+      "Bash(./connectors/logs-metrics/logs_metrics.py:*)",
+      "Bash(@AGENT_HOME@/connectors/logs-metrics/logs_metrics.py:*)",
+      "Bash(connectors/product-api/product_api.py:*)",
+      "Bash(./connectors/product-api/product_api.py:*)",
+      "Bash(@AGENT_HOME@/connectors/product-api/product_api.py:*)",
+      "Bash(connectors/prod-digest/prod_issues.py:*)",
+      "Bash(./connectors/prod-digest/prod_issues.py:*)",
+      "Bash(@AGENT_HOME@/connectors/prod-digest/prod_issues.py:*)",
+      "Bash(ls:*)"
+    ],
+    "deny": [
+      "Edit(/@AGENT_HOME@/knowledge/**)",
+      "Edit(/@AGENT_HOME@/code/**)",
+      "Read(/@AGENT_HOME@/.env)",
+      "Read(/@AGENT_HOME@/.env.*)",
+      "Read(/@AGENT_HOME@/.env*)",
+      "Read(/@AGENT_USER_HOME@/.claude-token.env)",
+      "Read(/@AGENT_HOME@/.claude-config/**)",
+      "Read(/@AGENT_HOME@/.claude-config-public/**)",
+      "Grep(/@AGENT_HOME@/.claude-config/**)",
+      "Read(/@AGENT_HOME@/config/mcp.json)",
+      "Grep(/@AGENT_HOME@/config/mcp.json)",
+      "Read(/@AGENT_HOME@/tg/**)",
+      "Grep(/@AGENT_HOME@/tg/**)",
+      "Read(/@AGENT_USER_HOME@/.ssh/**)",
+      "Read(//root/**)",
+      "Read(//etc/shadow)",
+      "Bash(rm:*)",
+      "Bash(perl:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(env:*)",
+      "Bash(printenv:*)",
+      "WebFetch",
+      "WebSearch"
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true
+}

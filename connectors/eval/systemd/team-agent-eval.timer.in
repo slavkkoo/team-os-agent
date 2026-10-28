@@ -1,0 +1,10 @@
+[Unit]
+Description=Team agent connector timer: eval (вс 04:00, пояс @TZ@)
+
+[Timer]
+OnCalendar=Sun *-*-* 04:00:00 @TZ@
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
